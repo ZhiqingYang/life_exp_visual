@@ -83,7 +83,7 @@ function makeScatterPlot(csvData) {
        .text(function (d) { return d; })
        .attr("value", function (d) { return d; })
        .attr("selected", function(d){ return d == defaultYear; })
-           
+
     showCircles(dropDown.node());
     dropDown.on("change", function () {
         showCircles(this)
@@ -99,7 +99,7 @@ function showCircles(me) {
         .data(data)
         .filter(function (d) { return selected != d.year; })
         .attr("display", displayOthers);
-        
+
     svgContainer.selectAll(".circles")
         .data(data)
         .filter(function (d) { return selected == d.year; })
@@ -128,7 +128,7 @@ function makeLabels(svgContainer, msm, title, x, y) {
 
 // plot all the data points on the SVG
 // and add tooltip functionality
-function plotData(map) {
+function plotData(map,country,limits, x, y, msm) {
     // get population data as array
     curData = data.filter((row) => {
         return row.year == 1960 && row.fertility != "NA" && row.life_expectancy != "NA"
@@ -165,6 +165,7 @@ function plotData(map) {
         .attr('stroke', "black")
         .attr('stroke-width', 2)
         .attr('fill', '#1e5878')
+        .attr('opacity', 0.5)
         .attr("class", "circles")
         // add tooltip functionality to points
         .on("mouseover", (d) => {
@@ -176,7 +177,7 @@ function plotData(map) {
             div
                 .style("left", (d3.event.pageX) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
-            
+
         })
         .on("mouseout", (d) => {
             div.transition()
@@ -184,20 +185,34 @@ function plotData(map) {
                 .style("opacity", 0);
         });
 
-        let over100 = data.filter(function(d) {return +d['population'] > 100000000})
+        let countryData = data.filter((row) => { return row.country == country })
+        let population = countryData.map((row) => parseInt(row["population"] / 1000000));
+        let year = countryData.map((row) => parseInt(row["year"]));
 
-        console.log(over100)
-    
-        // svgContainer.selectAll('.text')
-        //             .data(over100)
-        //             .append('text')
-        //                 .attr('x', function(d) {return xScale(+d['year'])})
-        //                 .attr('y', function(d) {return yScale(+d['life_expectancy'])})
-        //                 .text("hello")
+        let axesLimits = findMinMax(year, population);
+        let mapFunctions = drawAxes(axesLimits, "fertility", "life_expectancy", toolChart, small_msm);
 
-        //Add the SVG Text Element to the svgContainer
+
+
+
+
+    //     let over100 = data.filter(function(d) {return +d['population'] > 100000000})
+
+
+    //     svgContainer.selectAll('.text')
+    //    .data(over100)
+    //      .enter()
+    //      .append('text')
+    //         .attr('x', function(d) { return xScale(+d['fertility']) })
+    //         .attr('y', function(d) { return yScale(+d['life_expectancy']) })
+    //         .text(function(d) { return d['country'] })
+
+
+
 
 }
+
+
 
 function plotPopulation(country, toolChart) {
     let countryData = data.filter((row) => { return row.country == country })
@@ -206,6 +221,7 @@ function plotPopulation(country, toolChart) {
 
     let axesLimits = findMinMax(year, population);
     let mapFunctions = drawAxes(axesLimits, "year", "population", toolChart, small_msm);
+
     toolChart.append("path")
         .datum(countryData)
         .attr("fill", "none")
@@ -277,6 +293,22 @@ function drawAxes(limits, x, y, svgContainer, msm) {
         .attr('transform', 'translate(' + msm.marginAll + ', 0)')
         .call(yAxis);
 
+
+
+
+        let over100 = data.filter(function(d) {return +d['population'] > 100000000  && +d['year']==1980} )
+
+
+        console.log(over100)
+
+        svgContainer.selectAll('.text')
+       .data(over100)
+         .enter()
+         .append('text')
+            .attr('x', function(d) { return xScale(+d['fertility'])+20})
+            .attr('y', function(d) { return yScale(+d['life_expectancy']) })
+            .text(function(d) { return d['country'] })
+
     // return mapping and scaling functions
     return {
         x: xMap,
@@ -284,7 +316,14 @@ function drawAxes(limits, x, y, svgContainer, msm) {
         xScale: xScale,
         yScale: yScale
     };
+
+
+
 }
+
+
+
+
 
 // find min and max for arrays of x and y
 function findMinMax(x, y) {
@@ -297,6 +336,10 @@ function findMinMax(x, y) {
     let yMin = d3.min(y);
     let yMax = d3.max(y);
 
+
+
+
+
     // return formatted min/max data as an object
     return {
         xMin: xMin,
@@ -304,4 +347,12 @@ function findMinMax(x, y) {
         yMin: yMin,
         yMax: yMax
     }
+
+
+
+
+
+
+
+
 }
